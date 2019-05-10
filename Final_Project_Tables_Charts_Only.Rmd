@@ -1,0 +1,299 @@
+---
+title: "DSP543 Final Report"
+author: "Jiayuan Zhang"
+date: "May 10, 2019"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.width=8, fig.height=4) 
+```
+
+### **Empirical investigation on peple's purchasing behavior on black friday**
+
+#### Data Description
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+setwd('C:/Users/89175/Documents/URIstudy/DSP543/final_project')
+friday <- read.csv ("BlackFriday.csv")
+library("tidyverse")
+library("ggplot2")
+
+ggplot(friday,aes(Age))+geom_bar()+facet_wrap(~ City_Category) + ggtitle("Figure 1 Count of age group")
+```
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+ggplot(friday,aes(Gender))+geom_bar()+facet_wrap(~ City_Category) + ggtitle("Figure 2 Count of gender group")
+```
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+ggplot(friday,aes(Occupation))+geom_bar()+facet_wrap(~ City_Category) + ggtitle("Figure 3 Count of occupation group")
+```
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+ggplot(friday,aes(Marital_Status))+geom_bar()+facet_wrap(~ City_Category) + ggtitle("Figure 4 Count of marital status")
+```
+
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+library(dplyr)
+meancity<-group_by(friday, City_Category) %>%
+  summarise(
+    count = n(),
+    mean = mean(Purchase, na.rm = TRUE),
+    sd = sd(Purchase, na.rm = TRUE))
+
+
+meancategory1 <- group_by(friday, City_Category) %>%
+  summarise(
+    count = n(),
+    mean = mean(Product_Category_1, na.rm = TRUE),
+    sd = sd(Product_Category_1, na.rm = TRUE))
+
+meancategory2 <- group_by(friday, City_Category) %>%
+  summarise(
+    count = n(),
+    mean = mean(Product_Category_2, na.rm = TRUE),
+    sd = sd(Product_Category_2, na.rm = TRUE))
+
+meancategory3 <- group_by(friday, City_Category) %>%
+  summarise(
+    count = n(),
+    mean = mean(Product_Category_3, na.rm = TRUE),
+    sd = sd(Product_Category_3, na.rm = TRUE))
+
+```
+
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+library("ggpubr")
+ggboxplot(friday, x = "City_Category",y="Purchase",
+          color = "City_Category", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("A", "B", "C"),
+          ylab = "Purchase amount", xlab = "City") + ggtitle("Figure 5 - Boxplot of purchase amount")
+```
+
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+ggboxplot(friday, x = "City_Category",y="Product_Category_1",
+          color = "City_Category", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("A", "B", "C"),
+          ylab = "Product_Category_1", xlab = "City") + ggtitle("Figure 6 -  Boxplot of items in category 1")
+```
+
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+ggboxplot(friday, x = "City_Category",y="Product_Category_2",
+          color = "City_Category", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("A", "B", "C"),
+          ylab = "Product_Category_2", xlab = "City") + ggtitle("Figure 7 - Boxplot of items in category 2")
+```
+
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+ggboxplot(friday, x = "City_Category",y="Product_Category_2",
+          color = "City_Category", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("A", "B", "C"),
+          ylab = "Product_Category_2", xlab = "City") + ggtitle("Figure 8 - Boxplot of items in category 3")
+```
+
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+res.aov <- aov(Purchase ~ City_Category, data = friday)
+```
+#### ANOVA analysis
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+res.aov
+TukeyHSD(res.aov)
+```
+  
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+plot(res.aov, 1,main="Figure 9 - check assumption of homogeneity")
+bartlett.test(Purchase ~ City_Category, data=friday)
+```
+
+  
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+plot(res.aov, 2, main="Figure 10 check assumption of normality")
+kruskal.test(Purchase ~ City_Category, data = friday)
+```
+
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+res.aov <- aov(Purchase ~ Age, data = friday)
+summary(res.aov)
+TukeyHSD(res.aov)
+```
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+m1<-glm(Purchase~City_Category+Age+Gender, data=friday)
+```
+
+#### Linear regression
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+summary(m1)
+```
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+#Create a contingency table A>=10000
+Anumber1 <- sum(friday$City_Category == "A" & friday$Age == "0-17" & friday$Gender =="M" & friday$Purchase>=10000)
+Anumber2 <- sum(friday$City_Category == "A" & friday$Age == "18-25" & friday$Gender =="M" & friday$Purchase>=10000)
+Anumber3 <- sum(friday$City_Category == "A" & friday$Age == "26-35" & friday$Gender =="M" & friday$Purchase>=10000)
+Anumber4 <- sum(friday$City_Category == "A" & friday$Age == "36-45" & friday$Gender =="M" & friday$Purchase>=10000)
+Anumber5 <- sum(friday$City_Category == "A" & friday$Age == "46-50" & friday$Gender =="M" & friday$Purchase>=10000)
+Anumber6 <- sum(friday$City_Category == "A" & friday$Age == "51-55" & friday$Gender =="M" & friday$Purchase>=10000)
+Anumber7 <- sum(friday$City_Category == "A" & friday$Age == "55+" & friday$Gender =="M" & friday$Purchase>=10000)
+
+Anumber8 <- sum(friday$City_Category == "A" & friday$Age == "0-17" & friday$Gender =="F" & friday$Purchase>=10000)
+Anumber9 <- sum(friday$City_Category == "A" & friday$Age == "18-25" & friday$Gender =="F" & friday$Purchase>=10000)
+Anumber10 <- sum(friday$City_Category == "A" & friday$Age == "26-35" & friday$Gender =="F" & friday$Purchase>=10000)
+Anumber11 <- sum(friday$City_Category == "A" & friday$Age == "36-45" & friday$Gender =="F" & friday$Purchase>=10000)
+Anumber12 <- sum(friday$City_Category == "A" & friday$Age == "46-50" & friday$Gender =="F" & friday$Purchase>=10000)
+Anumber13 <- sum(friday$City_Category == "A" & friday$Age == "51-55" & friday$Gender =="F" & friday$Purchase>=10000)
+Anumber14 <- sum(friday$City_Category == "A" & friday$Age == "55+" & friday$Gender =="F" & friday$Purchase>=10000)
+
+
+#Create a contingency table A<10000
+
+Anumber15 <- sum(friday$City_Category == "A" & friday$Age == "0-17" & friday$Gender =="M" & friday$Purchase<10000)
+Anumber16 <- sum(friday$City_Category == "A" & friday$Age == "18-25" & friday$Gender =="M" & friday$Purchase<10000)
+Anumber17 <- sum(friday$City_Category == "A" & friday$Age == "26-35" & friday$Gender =="M" & friday$Purchase<10000)
+Anumber18 <- sum(friday$City_Category == "A" & friday$Age == "36-45" & friday$Gender =="M" & friday$Purchase<10000)
+Anumber19 <- sum(friday$City_Category == "A" & friday$Age == "46-50" & friday$Gender =="M" & friday$Purchase<10000)
+Anumber20 <- sum(friday$City_Category == "A" & friday$Age == "51-55" & friday$Gender =="M" & friday$Purchase<10000)
+Anumber21 <- sum(friday$City_Category == "A" & friday$Age == "55+" & friday$Gender =="M" & friday$Purchase<10000)
+
+Anumber22 <- sum(friday$City_Category == "A" & friday$Age == "0-17" & friday$Gender =="F" & friday$Purchase<10000)
+Anumber23 <- sum(friday$City_Category == "A" & friday$Age == "18-25" & friday$Gender =="F" & friday$Purchase<10000)
+Anumber24 <- sum(friday$City_Category == "A" & friday$Age == "26-35" & friday$Gender =="F" & friday$Purchase<10000)
+Anumber25 <- sum(friday$City_Category == "A" & friday$Age == "36-45" & friday$Gender =="F" & friday$Purchase<10000)
+Anumber26 <- sum(friday$City_Category == "A" & friday$Age == "46-50" & friday$Gender =="F" & friday$Purchase<10000)
+Anumber27 <- sum(friday$City_Category == "A" & friday$Age == "51-55" & friday$Gender =="F" & friday$Purchase<10000)
+Anumber28 <- sum(friday$City_Category == "A" & friday$Age == "55+" & friday$Gender =="F" & friday$Purchase<10000)
+
+pag.tabA <- matrix(c(Anumber1, Anumber2,Anumber3,Anumber4,Anumber5, Anumber6,Anumber7,
+                     Anumber8, Anumber9,Anumber10,Anumber11,Anumber12, Anumber13,Anumber14,
+                     Anumber15, Anumber16,Anumber17,Anumber18,Anumber19, Anumber20,Anumber21,
+                     Anumber22, Anumber23,Anumber24,Anumber25,Anumber26, Anumber27,Anumber28))
+
+
+#Create a contingency table B>=10000
+Bnumber1 <- sum(friday$City_Category == "B" & friday$Age == "0-17" & friday$Gender =="M" & friday$Purchase>=10000)
+Bnumber2 <- sum(friday$City_Category == "B" & friday$Age == "18-25" & friday$Gender =="M" & friday$Purchase>=10000)
+Bnumber3 <- sum(friday$City_Category == "B" & friday$Age == "26-35" & friday$Gender =="M" & friday$Purchase>=10000)
+Bnumber4 <- sum(friday$City_Category == "B" & friday$Age == "36-45" & friday$Gender =="M" & friday$Purchase>=10000)
+Bnumber5 <- sum(friday$City_Category == "B" & friday$Age == "46-50" & friday$Gender =="M" & friday$Purchase>=10000)
+Bnumber6 <- sum(friday$City_Category == "B" & friday$Age == "51-55" & friday$Gender =="M" & friday$Purchase>=10000)
+Bnumber7 <- sum(friday$City_Category == "B" & friday$Age == "55+" & friday$Gender =="M" & friday$Purchase>=10000)
+
+Bnumber8 <- sum(friday$City_Category == "B" & friday$Age == "0-17" & friday$Gender =="F" & friday$Purchase>=10000)
+Bnumber9 <- sum(friday$City_Category == "B" & friday$Age == "18-25" & friday$Gender =="F" & friday$Purchase>=10000)
+Bnumber10 <- sum(friday$City_Category == "B" & friday$Age == "26-35" & friday$Gender =="F" & friday$Purchase>=10000)
+Bnumber11 <- sum(friday$City_Category == "B" & friday$Age == "36-45" & friday$Gender =="F" & friday$Purchase>=10000)
+Bnumber12 <- sum(friday$City_Category == "B" & friday$Age == "46-50" & friday$Gender =="F" & friday$Purchase>=10000)
+Bnumber13 <- sum(friday$City_Category == "B" & friday$Age == "51-55" & friday$Gender =="F" & friday$Purchase>=10000)
+Bnumber14 <- sum(friday$City_Category == "B" & friday$Age == "55+" & friday$Gender =="F" & friday$Purchase>=10000)
+
+
+#Create a contingency table B<10000
+
+Bnumber15 <- sum(friday$City_Category == "B" & friday$Age == "0-17" & friday$Gender =="M" & friday$Purchase<10000)
+Bnumber16 <- sum(friday$City_Category == "B" & friday$Age == "18-25" & friday$Gender =="M" & friday$Purchase<10000)
+Bnumber17 <- sum(friday$City_Category == "B" & friday$Age == "26-35" & friday$Gender =="M" & friday$Purchase<10000)
+Bnumber18 <- sum(friday$City_Category == "B" & friday$Age == "36-45" & friday$Gender =="M" & friday$Purchase<10000)
+Bnumber19 <- sum(friday$City_Category == "B" & friday$Age == "46-50" & friday$Gender =="M" & friday$Purchase<10000)
+Bnumber20 <- sum(friday$City_Category == "B" & friday$Age == "51-55" & friday$Gender =="M" & friday$Purchase<10000)
+Bnumber21 <- sum(friday$City_Category == "B" & friday$Age == "55+" & friday$Gender =="M" & friday$Purchase<10000)
+
+Bnumber22 <- sum(friday$City_Category == "B" & friday$Age == "0-17" & friday$Gender =="F" & friday$Purchase<10000)
+Bnumber23 <- sum(friday$City_Category == "B" & friday$Age == "18-25" & friday$Gender =="F" & friday$Purchase<10000)
+Bnumber24 <- sum(friday$City_Category == "B" & friday$Age == "26-35" & friday$Gender =="F" & friday$Purchase<10000)
+Bnumber25 <- sum(friday$City_Category == "B" & friday$Age == "36-45" & friday$Gender =="F" & friday$Purchase<10000)
+Bnumber26 <- sum(friday$City_Category == "B" & friday$Age == "46-50" & friday$Gender =="F" & friday$Purchase<10000)
+Bnumber27 <- sum(friday$City_Category == "B" & friday$Age == "51-55" & friday$Gender =="F" & friday$Purchase<10000)
+Bnumber28 <- sum(friday$City_Category == "B" & friday$Age == "55+" & friday$Gender =="F" & friday$Purchase<10000)
+
+pag.tabB <- matrix(c(Bnumber1, Bnumber2,Bnumber3,Bnumber4,Bnumber5, Bnumber6,Bnumber7,
+                     Bnumber8, Bnumber9,Bnumber10,Bnumber11,Bnumber12, Bnumber13,Bnumber14,
+                     Bnumber15, Bnumber16,Bnumber17,Bnumber18,Bnumber19, Bnumber20,Bnumber21,
+                     Bnumber22, Bnumber23,Bnumber24,Bnumber25,Bnumber26, Bnumber27,Bnumber28))
+
+
+#Create a contingency table C>=10000
+Cnumber1 <- sum(friday$City_Category == "C" & friday$Age == "0-17" & friday$Gender =="M" & friday$Purchase>=10000)
+Cnumber2 <- sum(friday$City_Category == "C" & friday$Age == "18-25" & friday$Gender =="M" & friday$Purchase>=10000)
+Cnumber3 <- sum(friday$City_Category == "C" & friday$Age == "26-35" & friday$Gender =="M" & friday$Purchase>=10000)
+Cnumber4 <- sum(friday$City_Category == "C" & friday$Age == "36-45" & friday$Gender =="M" & friday$Purchase>=10000)
+Cnumber5 <- sum(friday$City_Category == "C" & friday$Age == "46-50" & friday$Gender =="M" & friday$Purchase>=10000)
+Cnumber6 <- sum(friday$City_Category == "C" & friday$Age == "51-55" & friday$Gender =="M" & friday$Purchase>=10000)
+Cnumber7 <- sum(friday$City_Category == "C" & friday$Age == "55+" & friday$Gender =="M" & friday$Purchase>=10000)
+
+Cnumber8 <- sum(friday$City_Category == "C" & friday$Age == "0-17" & friday$Gender =="F" & friday$Purchase>=10000)
+Cnumber9 <- sum(friday$City_Category == "C" & friday$Age == "18-25" & friday$Gender =="F" & friday$Purchase>=10000)
+Cnumber10 <- sum(friday$City_Category == "C" & friday$Age == "26-35" & friday$Gender =="F" & friday$Purchase>=10000)
+Cnumber11 <- sum(friday$City_Category == "C" & friday$Age == "36-45" & friday$Gender =="F" & friday$Purchase>=10000)
+Cnumber12 <- sum(friday$City_Category == "C" & friday$Age == "46-50" & friday$Gender =="F" & friday$Purchase>=10000)
+Cnumber13 <- sum(friday$City_Category == "C" & friday$Age == "51-55" & friday$Gender =="F" & friday$Purchase>=10000)
+Cnumber14 <- sum(friday$City_Category == "C" & friday$Age == "55+" & friday$Gender =="F" & friday$Purchase>=10000)
+
+
+#Create a contingency table C<10000
+
+Cnumber15 <- sum(friday$City_Category == "C" & friday$Age == "0-17" & friday$Gender =="M" & friday$Purchase<10000)
+Cnumber16 <- sum(friday$City_Category == "C" & friday$Age == "18-25" & friday$Gender =="M" & friday$Purchase<10000)
+Cnumber17 <- sum(friday$City_Category == "C" & friday$Age == "26-35" & friday$Gender =="M" & friday$Purchase<10000)
+Cnumber18 <- sum(friday$City_Category == "C" & friday$Age == "36-45" & friday$Gender =="M" & friday$Purchase<10000)
+Cnumber19 <- sum(friday$City_Category == "C" & friday$Age == "46-50" & friday$Gender =="M" & friday$Purchase<10000)
+Cnumber20 <- sum(friday$City_Category == "C" & friday$Age == "51-55" & friday$Gender =="M" & friday$Purchase<10000)
+Cnumber21 <- sum(friday$City_Category == "C" & friday$Age == "55+" & friday$Gender =="M" & friday$Purchase<10000)
+
+Cnumber22 <- sum(friday$City_Category == "C" & friday$Age == "0-17" & friday$Gender =="F" & friday$Purchase<10000)
+Cnumber23 <- sum(friday$City_Category == "C" & friday$Age == "18-25" & friday$Gender =="F" & friday$Purchase<10000)
+Cnumber24 <- sum(friday$City_Category == "C" & friday$Age == "26-35" & friday$Gender =="F" & friday$Purchase<10000)
+Cnumber25 <- sum(friday$City_Category == "C" & friday$Age == "36-45" & friday$Gender =="F" & friday$Purchase<10000)
+Cnumber26 <- sum(friday$City_Category == "C" & friday$Age == "46-50" & friday$Gender =="F" & friday$Purchase<10000)
+Cnumber27 <- sum(friday$City_Category == "C" & friday$Age == "51-55" & friday$Gender =="F" & friday$Purchase<10000)
+Cnumber28 <- sum(friday$City_Category == "C" & friday$Age == "55+" & friday$Gender =="F" & friday$Purchase<10000)
+
+pag.tabC <- matrix(c(Cnumber1, Cnumber2,Cnumber3,Cnumber4,Cnumber5, Cnumber6,Cnumber7,
+                     Cnumber8, Cnumber9,Cnumber10,Cnumber11,Cnumber12, Cnumber13,Cnumber14,
+                     Cnumber15, Cnumber16,Cnumber17,Cnumber18,Cnumber19, Cnumber20,Cnumber21,
+                     Cnumber22, Cnumber23,Cnumber24,Cnumber25,Cnumber26, Cnumber27,Cnumber28))
+
+dat=expand.grid(Age=c('0-17','18-25','26-35','36-45','46-50','51-55','55+'),City=c('CityA','CityB','CityC'),Gender=c('M','F'))
+dat$Yes=c(Anumber1,Anumber2,Anumber3,Anumber4,Anumber5,Anumber6,Anumber7,
+          Bnumber1,Bnumber2,Bnumber3,Bnumber4,Bnumber5,Bnumber6,Bnumber7,
+          Cnumber1,Cnumber2,Cnumber3,Cnumber4,Cnumber5,Cnumber6,Cnumber7,
+          Anumber8,Anumber9,Anumber10,Anumber11,Anumber12,Anumber13,Anumber14,
+          Bnumber8,Bnumber9,Bnumber10,Bnumber11,Bnumber12,Bnumber13,Bnumber14,
+          Cnumber8,Cnumber9,Cnumber10,Cnumber11,Cnumber12,Cnumber13,Cnumber14)
+
+dat$No=c(Anumber15,Anumber16,Anumber17,Anumber18,Anumber19,Anumber20,Anumber21,
+         Bnumber15,Bnumber16,Bnumber17,Bnumber18,Bnumber19,Bnumber20,Bnumber21,
+         Cnumber15,Cnumber16,Cnumber17,Cnumber18,Cnumber19,Cnumber20,Cnumber21,
+         Anumber22,Anumber23,Anumber24,Anumber25,Anumber26,Anumber27,Anumber28,
+         Bnumber22,Bnumber23,Bnumber24,Bnumber25,Bnumber26,Bnumber27,Bnumber28,
+         Cnumber22,Cnumber23,Cnumber24,Cnumber25,Cnumber26,Cnumber27,Cnumber28)
+
+dat1<-transform(dat,F1=relevel(Age,ref = '0-17'),F2=relevel(City,ref = 'CityA'),F3=relevel(Gender,ref = 'F'))
+m2=glm(cbind(Yes,No)~F1+F2+F3,data=dat1,family=binomial)
+```
+#### Logistic regression
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+dat
+xtabs(cbind(Yes,No)~Gender+Age+City,data=dat)
+```
+
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+summary(m2)
+```
+

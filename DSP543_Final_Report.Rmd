@@ -1,0 +1,316 @@
+---
+title: "DSP543 Final Report"
+author: "Jiayuan Zhang"
+date: "May 10, 2019"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.width=8, fig.height=4) 
+```
+
+### **Empirical investigation on peple's purchasing behavior on black friday**
+
+#### Introduction
+This report empirically tests whether people in different countries have different purchasing behavior on black Friday. The data comes from website kaggle. The original data set comes from a retail store that wants to study the consumers' purchasing behavior, especially focus on the purchase amount. The dataset consists of 537577 observation. In this report, we respond to the appeal to test what will lead to the increase of purchase amount on Black Friday in this retail store. Two main methods, ANOVA and logistic regression, are applied to study the drivers of purchase amount.  
+
+The practical implication of the project is that we can provide insights on the consumers' purchasing behavior by studying the data set. With a large size of data, the findings from the study are robusted. The restail store can use the results to boost the retails sales in the future black friday.
+
+#### Data Description
+Before we analyze on the data, we need to take a look on the data to find out the basic information. We plotted the graph to show the demographic information of the data. Figure 1 shows the Age distribution across the three cities. We find out that the three cities have similar distribution of the age group. All the cities show that age group 26-35 is the largest group that has the highest count. Group 18-25 and group 36-45 are also the major large groups. Figure 2 shows the gender group across the three cities. All three cities show that the retail store has more male than femal to purchase on Black Friday. Figure 3 shows that the occupation group across the three cities. From consumers who come from city A, occupation 0, occupation 4, and occupation 7 are the three groups that have larger population. From consumers who come from city B, occupation 0,4,and 7 are also the three groups that have largest population. The same thing happens in consumers from city C. Figure 4 shows that in three cities, consumers who are single have higher count than married group. 
+
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+setwd('C:/Users/89175/Documents/URIstudy/DSP543/final_project')
+friday <- read.csv ("BlackFriday.csv")
+library("tidyverse")
+library("ggplot2")
+
+ggplot(friday,aes(Age))+geom_bar()+facet_wrap(~ City_Category) + ggtitle("Figure 1 Count of age group")
+```
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+ggplot(friday,aes(Gender))+geom_bar()+facet_wrap(~ City_Category) + ggtitle("Figure 2 Count of gender group")
+```
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+ggplot(friday,aes(Occupation))+geom_bar()+facet_wrap(~ City_Category) + ggtitle("Figure 3 Count of occupation group")
+```
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+ggplot(friday,aes(Marital_Status))+geom_bar()+facet_wrap(~ City_Category) + ggtitle("Figure 4 Count of marital status")
+```
+
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+library(dplyr)
+meancity<-group_by(friday, City_Category) %>%
+  summarise(
+    count = n(),
+    mean = mean(Purchase, na.rm = TRUE),
+    sd = sd(Purchase, na.rm = TRUE))
+
+
+meancategory1 <- group_by(friday, City_Category) %>%
+  summarise(
+    count = n(),
+    mean = mean(Product_Category_1, na.rm = TRUE),
+    sd = sd(Product_Category_1, na.rm = TRUE))
+
+meancategory2 <- group_by(friday, City_Category) %>%
+  summarise(
+    count = n(),
+    mean = mean(Product_Category_2, na.rm = TRUE),
+    sd = sd(Product_Category_2, na.rm = TRUE))
+
+meancategory3 <- group_by(friday, City_Category) %>%
+  summarise(
+    count = n(),
+    mean = mean(Product_Category_3, na.rm = TRUE),
+    sd = sd(Product_Category_3, na.rm = TRUE))
+
+```
+
+We then check the mean purcahse amount and standard deviation of three cities. The mean total purhcase amount of city A is `r meancity[1,3]` and standard deviation is `r meancity[1,4]`. The mean total purhcase amount of city B is `r meancity[2,3]` and standard deviation is `r meancity[2,4]`. The mean total purhcase amount of city C is `r meancity[3,3]` and standard deviation is `r meancity[3,4]`. Below we apply the boxplot to plot the mean of each city. City C has higher purchase amount than city B, which has higher purhcase amount than city A. 
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+library("ggpubr")
+ggboxplot(friday, x = "City_Category",y="Purchase",
+          color = "City_Category", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("A", "B", "C"),
+          ylab = "Purchase amount", xlab = "City") + ggtitle("Figure 5 - Boxplot of purchase amount")
+```
+
+Then we take a look at the purchase itmes of different categories. The mean purcahse amount of product category 1 of City A is  `r meancategory1[1,3]` and standard deviation is `r meancategory1[1,4]`. The mean purcahse amounot of product category 1 of City B is  `r meancategory1[2,3]` and standard deviation is `r meancategory1[2,4]`.  The mean purcahse amounot of product category 1 of City C is  `r meancategory1[3,3]` and standard deviation is `r meancategory1[3,4]`. Below we plot the boxplot of the product category 1 in the three cities. The three cities share the similar purhcase amout of the product category 1. 
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+ggboxplot(friday, x = "City_Category",y="Product_Category_1",
+          color = "City_Category", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("A", "B", "C"),
+          ylab = "Product_Category_1", xlab = "City") + ggtitle("Figure 6 -  Boxplot of items in category 1")
+```
+
+The mean purcahse items of product category 2 of City A is  `r meancategory2[1,3]` and standard deviation is `r meancategory2[1,4]`. The mean purcahse amounot of product category 2 of City B is  `r meancategory2[2,3]` and standard deviation is `r meancategory2[2,4]`.  The mean purcahse amounot of product category 2 of City C is  `r meancategory2[3,3]` and standard deviation is `r meancategory2[3,4]`.  Below we plot the boxplot of the product category 2 in the three cities.The three cities share the similar purhcase amout of the product category 2.  
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+ggboxplot(friday, x = "City_Category",y="Product_Category_2",
+          color = "City_Category", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("A", "B", "C"),
+          ylab = "Product_Category_2", xlab = "City") + ggtitle("Figure 7 - Boxplot of items in category 2")
+```
+
+The mean purcahse amounot of product category 3 of City A is  `r meancategory3[1,3]` and standard deviation is `r meancategory3[1,4]`. The mean purcahse amounot of product category 3 of City B is  `r meancategory3[2,3]` and standard deviation is `r meancategory3[2,4]`.  The mean purcahse amounot of product category 3 of City C is  `r meancategory3[3,3]` and standard deviation is `r meancategory3[3,4]`. The three cities share the similar purhcase amout of the product category 3. 
+
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+ggboxplot(friday, x = "City_Category",y="Product_Category_2",
+          color = "City_Category", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("A", "B", "C"),
+          ylab = "Product_Category_2", xlab = "City") + ggtitle("Figure 8 - Boxplot of items in category 3")
+```
+
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+res.aov <- aov(Purchase ~ City_Category, data = friday)
+```
+#### ANOVA analysis
+In this section, we want to investigate whether different cities have different number of purchase amounts. Therefore, we run an ANOVA analysis on the purchase amount among the three cities. Below is the ANOVA results on the purchase amount among the three cities. The ANOVA results show that the three cities have different purchase amounts. We then go ahead to use Tukey test to see how the city is different from each city.The p-value of the comprison between city B and city A is 0, which means the purchase amount is different between city B and city A. The p-value of the comparsion between city C and city A is 0, which means the purchase amount is different between city C and city A. The p-value of comparison between city C and city B is different, which means the purchase amount is different between city B and city C. Overall, the results show that the purhcase amount is different among the three cities. 
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+res.aov
+TukeyHSD(res.aov)
+```
+However, since we do not check the assumption of homogeneity and assumption of normality on the data, the ANOVA results might not be precise. Below we plot the graph to first check the homogeneity assumption on the data. From figure 9, we can see that the residuals are similar among the three cities. We then use bartlett test, which is to test whehter the residual is correlated with the fitted value, to test the assumption of homogeneity. We find that the p-value is less than 0, and it indicates that the residual is related with the fitted value. It shows that our assumption of homogeneity is violated.  
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+plot(res.aov, 1,main="Figure 9 - check assumption of homogeneity")
+bartlett.test(Purchase ~ City_Category, data=friday)
+```
+
+In the next step, we test the assumption of normality of the data. Figure 10 shows that relationship between the theoretical quantiles and standaradized residuals. If the assumption of normality is not violated, all the data will fall into the 45 degree line. However, figures 10 shows that not all the data fall to the 45 degree line, and most of them are not on the line. The graph shows that the assumption of normality is also violated in the data. Because both the assumption of homogeneity and assumption of normality are violated, we need to use the kruskal test, which is alternative test of ANOVA when these assumptions are not met. Below the kruskal test shows that the purchase amount of three cities are still different from each other.  
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+plot(res.aov, 2, main="Figure 10 check assumption of normality")
+kruskal.test(Purchase ~ City_Category, data = friday)
+```
+
+We also run the ANOVA analysis on the age group and the amount of purchase. Below are the results that show comparision between different groups. The ANOVA results show that the purchase amount is different among different age groups. However, when we run a detail analysis on different age group, we have an interesting finding. The p-vale between age group 46-50 and 18-25 is not significant. It shows that people from age group 46-50 and people from age group 18-25 have the same purchase amount. The p-value between age group 46-50 and 26-35 is not significant either. It shows that these two groups do not have significantly different purchase amount. The p-value between age group 55+ and 36-45 is not significant, and it also shows that these two groups don't have different purchase amount. Since this is the data from large observation, the results show that younger adult and mid age group have the same purchase amount in this retail store. 
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+res.aov <- aov(Purchase ~ Age, data = friday)
+summary(res.aov)
+TukeyHSD(res.aov)
+```
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+m1<-glm(Purchase~City_Category+Age+Gender, data=friday)
+```
+
+#### Linear regression
+In this section, we will run a linear regression to see whehter different cities, different age group, and gender will impact the purchase amount. In the analysis, the dependent variable is the total purchase amount, which is continuous variable. The independent variables are the cities, age group, and gender, and these varialbes are categorical variables. Below is the results from the linear regression. The coefficient of city B is `r summary(m1)$coefficients[,"Estimate"][2]`, and the p-value is `r summary(m1)$coefficients[,"Pr(>|t|)"][2]`. It means that controlling all the other variables, consumers from city B will lead increase of purchase amount of `r summary(m1)$coefficients[,"Estimate"][2]` compared to consumers from city A. The coefficient of city C is `r summary(m1)$coefficients[,"Estimate"][3]`, and the p-value is `r summary(m1)$coefficients[,"Pr(>|t|)"][3]`. It means that controlling all the other variables, consumers from city C will lead to increase of purchase amount of `r summary(m1)$coefficients[,"Estimate"][3]` compared to consumers from city A. The coefficient of gender is `r summary(m1)$coefficients[,"Estimate"][10]` with p-value `r summary(m1)$coefficients[,"Pr(>|t|)"][10]` . It shows that controlling other variables, male will lead to increase of purchase amount `r summary(m1)$coefficients[,"Estimate"][10]` compared to female. Regarding the age group, the base level is the age group under age 18, all the coefficient of different age groups are positive, it shows that compared to age group under 18, all the age group will lead to the increase of purchase amount. It makes sense because age group under 18 is the group who does not have income. Among all the age groups, age group 51-55 has the highest coefficient `r summary(m1)$coefficients[,"Estimate"][8]`, with significant p-value. The regression results show that city, age group, and gender will impact the purchase amout. In addition to investigate the factors that impact the purchase amount, we also want to test whehter these factors will lead to higher probability of purchase amount over 10000. We will run the logistic regression in the section below. 
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+summary(m1)
+```
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+#Create a contingency table A>=10000
+Anumber1 <- sum(friday$City_Category == "A" & friday$Age == "0-17" & friday$Gender =="M" & friday$Purchase>=10000)
+Anumber2 <- sum(friday$City_Category == "A" & friday$Age == "18-25" & friday$Gender =="M" & friday$Purchase>=10000)
+Anumber3 <- sum(friday$City_Category == "A" & friday$Age == "26-35" & friday$Gender =="M" & friday$Purchase>=10000)
+Anumber4 <- sum(friday$City_Category == "A" & friday$Age == "36-45" & friday$Gender =="M" & friday$Purchase>=10000)
+Anumber5 <- sum(friday$City_Category == "A" & friday$Age == "46-50" & friday$Gender =="M" & friday$Purchase>=10000)
+Anumber6 <- sum(friday$City_Category == "A" & friday$Age == "51-55" & friday$Gender =="M" & friday$Purchase>=10000)
+Anumber7 <- sum(friday$City_Category == "A" & friday$Age == "55+" & friday$Gender =="M" & friday$Purchase>=10000)
+
+Anumber8 <- sum(friday$City_Category == "A" & friday$Age == "0-17" & friday$Gender =="F" & friday$Purchase>=10000)
+Anumber9 <- sum(friday$City_Category == "A" & friday$Age == "18-25" & friday$Gender =="F" & friday$Purchase>=10000)
+Anumber10 <- sum(friday$City_Category == "A" & friday$Age == "26-35" & friday$Gender =="F" & friday$Purchase>=10000)
+Anumber11 <- sum(friday$City_Category == "A" & friday$Age == "36-45" & friday$Gender =="F" & friday$Purchase>=10000)
+Anumber12 <- sum(friday$City_Category == "A" & friday$Age == "46-50" & friday$Gender =="F" & friday$Purchase>=10000)
+Anumber13 <- sum(friday$City_Category == "A" & friday$Age == "51-55" & friday$Gender =="F" & friday$Purchase>=10000)
+Anumber14 <- sum(friday$City_Category == "A" & friday$Age == "55+" & friday$Gender =="F" & friday$Purchase>=10000)
+
+
+#Create a contingency table A<10000
+
+Anumber15 <- sum(friday$City_Category == "A" & friday$Age == "0-17" & friday$Gender =="M" & friday$Purchase<10000)
+Anumber16 <- sum(friday$City_Category == "A" & friday$Age == "18-25" & friday$Gender =="M" & friday$Purchase<10000)
+Anumber17 <- sum(friday$City_Category == "A" & friday$Age == "26-35" & friday$Gender =="M" & friday$Purchase<10000)
+Anumber18 <- sum(friday$City_Category == "A" & friday$Age == "36-45" & friday$Gender =="M" & friday$Purchase<10000)
+Anumber19 <- sum(friday$City_Category == "A" & friday$Age == "46-50" & friday$Gender =="M" & friday$Purchase<10000)
+Anumber20 <- sum(friday$City_Category == "A" & friday$Age == "51-55" & friday$Gender =="M" & friday$Purchase<10000)
+Anumber21 <- sum(friday$City_Category == "A" & friday$Age == "55+" & friday$Gender =="M" & friday$Purchase<10000)
+
+Anumber22 <- sum(friday$City_Category == "A" & friday$Age == "0-17" & friday$Gender =="F" & friday$Purchase<10000)
+Anumber23 <- sum(friday$City_Category == "A" & friday$Age == "18-25" & friday$Gender =="F" & friday$Purchase<10000)
+Anumber24 <- sum(friday$City_Category == "A" & friday$Age == "26-35" & friday$Gender =="F" & friday$Purchase<10000)
+Anumber25 <- sum(friday$City_Category == "A" & friday$Age == "36-45" & friday$Gender =="F" & friday$Purchase<10000)
+Anumber26 <- sum(friday$City_Category == "A" & friday$Age == "46-50" & friday$Gender =="F" & friday$Purchase<10000)
+Anumber27 <- sum(friday$City_Category == "A" & friday$Age == "51-55" & friday$Gender =="F" & friday$Purchase<10000)
+Anumber28 <- sum(friday$City_Category == "A" & friday$Age == "55+" & friday$Gender =="F" & friday$Purchase<10000)
+
+pag.tabA <- matrix(c(Anumber1, Anumber2,Anumber3,Anumber4,Anumber5, Anumber6,Anumber7,
+                     Anumber8, Anumber9,Anumber10,Anumber11,Anumber12, Anumber13,Anumber14,
+                     Anumber15, Anumber16,Anumber17,Anumber18,Anumber19, Anumber20,Anumber21,
+                     Anumber22, Anumber23,Anumber24,Anumber25,Anumber26, Anumber27,Anumber28))
+
+
+#Create a contingency table B>=10000
+Bnumber1 <- sum(friday$City_Category == "B" & friday$Age == "0-17" & friday$Gender =="M" & friday$Purchase>=10000)
+Bnumber2 <- sum(friday$City_Category == "B" & friday$Age == "18-25" & friday$Gender =="M" & friday$Purchase>=10000)
+Bnumber3 <- sum(friday$City_Category == "B" & friday$Age == "26-35" & friday$Gender =="M" & friday$Purchase>=10000)
+Bnumber4 <- sum(friday$City_Category == "B" & friday$Age == "36-45" & friday$Gender =="M" & friday$Purchase>=10000)
+Bnumber5 <- sum(friday$City_Category == "B" & friday$Age == "46-50" & friday$Gender =="M" & friday$Purchase>=10000)
+Bnumber6 <- sum(friday$City_Category == "B" & friday$Age == "51-55" & friday$Gender =="M" & friday$Purchase>=10000)
+Bnumber7 <- sum(friday$City_Category == "B" & friday$Age == "55+" & friday$Gender =="M" & friday$Purchase>=10000)
+
+Bnumber8 <- sum(friday$City_Category == "B" & friday$Age == "0-17" & friday$Gender =="F" & friday$Purchase>=10000)
+Bnumber9 <- sum(friday$City_Category == "B" & friday$Age == "18-25" & friday$Gender =="F" & friday$Purchase>=10000)
+Bnumber10 <- sum(friday$City_Category == "B" & friday$Age == "26-35" & friday$Gender =="F" & friday$Purchase>=10000)
+Bnumber11 <- sum(friday$City_Category == "B" & friday$Age == "36-45" & friday$Gender =="F" & friday$Purchase>=10000)
+Bnumber12 <- sum(friday$City_Category == "B" & friday$Age == "46-50" & friday$Gender =="F" & friday$Purchase>=10000)
+Bnumber13 <- sum(friday$City_Category == "B" & friday$Age == "51-55" & friday$Gender =="F" & friday$Purchase>=10000)
+Bnumber14 <- sum(friday$City_Category == "B" & friday$Age == "55+" & friday$Gender =="F" & friday$Purchase>=10000)
+
+
+#Create a contingency table B<10000
+
+Bnumber15 <- sum(friday$City_Category == "B" & friday$Age == "0-17" & friday$Gender =="M" & friday$Purchase<10000)
+Bnumber16 <- sum(friday$City_Category == "B" & friday$Age == "18-25" & friday$Gender =="M" & friday$Purchase<10000)
+Bnumber17 <- sum(friday$City_Category == "B" & friday$Age == "26-35" & friday$Gender =="M" & friday$Purchase<10000)
+Bnumber18 <- sum(friday$City_Category == "B" & friday$Age == "36-45" & friday$Gender =="M" & friday$Purchase<10000)
+Bnumber19 <- sum(friday$City_Category == "B" & friday$Age == "46-50" & friday$Gender =="M" & friday$Purchase<10000)
+Bnumber20 <- sum(friday$City_Category == "B" & friday$Age == "51-55" & friday$Gender =="M" & friday$Purchase<10000)
+Bnumber21 <- sum(friday$City_Category == "B" & friday$Age == "55+" & friday$Gender =="M" & friday$Purchase<10000)
+
+Bnumber22 <- sum(friday$City_Category == "B" & friday$Age == "0-17" & friday$Gender =="F" & friday$Purchase<10000)
+Bnumber23 <- sum(friday$City_Category == "B" & friday$Age == "18-25" & friday$Gender =="F" & friday$Purchase<10000)
+Bnumber24 <- sum(friday$City_Category == "B" & friday$Age == "26-35" & friday$Gender =="F" & friday$Purchase<10000)
+Bnumber25 <- sum(friday$City_Category == "B" & friday$Age == "36-45" & friday$Gender =="F" & friday$Purchase<10000)
+Bnumber26 <- sum(friday$City_Category == "B" & friday$Age == "46-50" & friday$Gender =="F" & friday$Purchase<10000)
+Bnumber27 <- sum(friday$City_Category == "B" & friday$Age == "51-55" & friday$Gender =="F" & friday$Purchase<10000)
+Bnumber28 <- sum(friday$City_Category == "B" & friday$Age == "55+" & friday$Gender =="F" & friday$Purchase<10000)
+
+pag.tabB <- matrix(c(Bnumber1, Bnumber2,Bnumber3,Bnumber4,Bnumber5, Bnumber6,Bnumber7,
+                     Bnumber8, Bnumber9,Bnumber10,Bnumber11,Bnumber12, Bnumber13,Bnumber14,
+                     Bnumber15, Bnumber16,Bnumber17,Bnumber18,Bnumber19, Bnumber20,Bnumber21,
+                     Bnumber22, Bnumber23,Bnumber24,Bnumber25,Bnumber26, Bnumber27,Bnumber28))
+
+
+#Create a contingency table C>=10000
+Cnumber1 <- sum(friday$City_Category == "C" & friday$Age == "0-17" & friday$Gender =="M" & friday$Purchase>=10000)
+Cnumber2 <- sum(friday$City_Category == "C" & friday$Age == "18-25" & friday$Gender =="M" & friday$Purchase>=10000)
+Cnumber3 <- sum(friday$City_Category == "C" & friday$Age == "26-35" & friday$Gender =="M" & friday$Purchase>=10000)
+Cnumber4 <- sum(friday$City_Category == "C" & friday$Age == "36-45" & friday$Gender =="M" & friday$Purchase>=10000)
+Cnumber5 <- sum(friday$City_Category == "C" & friday$Age == "46-50" & friday$Gender =="M" & friday$Purchase>=10000)
+Cnumber6 <- sum(friday$City_Category == "C" & friday$Age == "51-55" & friday$Gender =="M" & friday$Purchase>=10000)
+Cnumber7 <- sum(friday$City_Category == "C" & friday$Age == "55+" & friday$Gender =="M" & friday$Purchase>=10000)
+
+Cnumber8 <- sum(friday$City_Category == "C" & friday$Age == "0-17" & friday$Gender =="F" & friday$Purchase>=10000)
+Cnumber9 <- sum(friday$City_Category == "C" & friday$Age == "18-25" & friday$Gender =="F" & friday$Purchase>=10000)
+Cnumber10 <- sum(friday$City_Category == "C" & friday$Age == "26-35" & friday$Gender =="F" & friday$Purchase>=10000)
+Cnumber11 <- sum(friday$City_Category == "C" & friday$Age == "36-45" & friday$Gender =="F" & friday$Purchase>=10000)
+Cnumber12 <- sum(friday$City_Category == "C" & friday$Age == "46-50" & friday$Gender =="F" & friday$Purchase>=10000)
+Cnumber13 <- sum(friday$City_Category == "C" & friday$Age == "51-55" & friday$Gender =="F" & friday$Purchase>=10000)
+Cnumber14 <- sum(friday$City_Category == "C" & friday$Age == "55+" & friday$Gender =="F" & friday$Purchase>=10000)
+
+
+#Create a contingency table C<10000
+
+Cnumber15 <- sum(friday$City_Category == "C" & friday$Age == "0-17" & friday$Gender =="M" & friday$Purchase<10000)
+Cnumber16 <- sum(friday$City_Category == "C" & friday$Age == "18-25" & friday$Gender =="M" & friday$Purchase<10000)
+Cnumber17 <- sum(friday$City_Category == "C" & friday$Age == "26-35" & friday$Gender =="M" & friday$Purchase<10000)
+Cnumber18 <- sum(friday$City_Category == "C" & friday$Age == "36-45" & friday$Gender =="M" & friday$Purchase<10000)
+Cnumber19 <- sum(friday$City_Category == "C" & friday$Age == "46-50" & friday$Gender =="M" & friday$Purchase<10000)
+Cnumber20 <- sum(friday$City_Category == "C" & friday$Age == "51-55" & friday$Gender =="M" & friday$Purchase<10000)
+Cnumber21 <- sum(friday$City_Category == "C" & friday$Age == "55+" & friday$Gender =="M" & friday$Purchase<10000)
+
+Cnumber22 <- sum(friday$City_Category == "C" & friday$Age == "0-17" & friday$Gender =="F" & friday$Purchase<10000)
+Cnumber23 <- sum(friday$City_Category == "C" & friday$Age == "18-25" & friday$Gender =="F" & friday$Purchase<10000)
+Cnumber24 <- sum(friday$City_Category == "C" & friday$Age == "26-35" & friday$Gender =="F" & friday$Purchase<10000)
+Cnumber25 <- sum(friday$City_Category == "C" & friday$Age == "36-45" & friday$Gender =="F" & friday$Purchase<10000)
+Cnumber26 <- sum(friday$City_Category == "C" & friday$Age == "46-50" & friday$Gender =="F" & friday$Purchase<10000)
+Cnumber27 <- sum(friday$City_Category == "C" & friday$Age == "51-55" & friday$Gender =="F" & friday$Purchase<10000)
+Cnumber28 <- sum(friday$City_Category == "C" & friday$Age == "55+" & friday$Gender =="F" & friday$Purchase<10000)
+
+pag.tabC <- matrix(c(Cnumber1, Cnumber2,Cnumber3,Cnumber4,Cnumber5, Cnumber6,Cnumber7,
+                     Cnumber8, Cnumber9,Cnumber10,Cnumber11,Cnumber12, Cnumber13,Cnumber14,
+                     Cnumber15, Cnumber16,Cnumber17,Cnumber18,Cnumber19, Cnumber20,Cnumber21,
+                     Cnumber22, Cnumber23,Cnumber24,Cnumber25,Cnumber26, Cnumber27,Cnumber28))
+
+dat=expand.grid(Age=c('0-17','18-25','26-35','36-45','46-50','51-55','55+'),City=c('CityA','CityB','CityC'),Gender=c('M','F'))
+dat$Yes=c(Anumber1,Anumber2,Anumber3,Anumber4,Anumber5,Anumber6,Anumber7,
+          Bnumber1,Bnumber2,Bnumber3,Bnumber4,Bnumber5,Bnumber6,Bnumber7,
+          Cnumber1,Cnumber2,Cnumber3,Cnumber4,Cnumber5,Cnumber6,Cnumber7,
+          Anumber8,Anumber9,Anumber10,Anumber11,Anumber12,Anumber13,Anumber14,
+          Bnumber8,Bnumber9,Bnumber10,Bnumber11,Bnumber12,Bnumber13,Bnumber14,
+          Cnumber8,Cnumber9,Cnumber10,Cnumber11,Cnumber12,Cnumber13,Cnumber14)
+
+dat$No=c(Anumber15,Anumber16,Anumber17,Anumber18,Anumber19,Anumber20,Anumber21,
+         Bnumber15,Bnumber16,Bnumber17,Bnumber18,Bnumber19,Bnumber20,Bnumber21,
+         Cnumber15,Cnumber16,Cnumber17,Cnumber18,Cnumber19,Cnumber20,Cnumber21,
+         Anumber22,Anumber23,Anumber24,Anumber25,Anumber26,Anumber27,Anumber28,
+         Bnumber22,Bnumber23,Bnumber24,Bnumber25,Bnumber26,Bnumber27,Bnumber28,
+         Cnumber22,Cnumber23,Cnumber24,Cnumber25,Cnumber26,Cnumber27,Cnumber28)
+
+dat1<-transform(dat,F1=relevel(Age,ref = '0-17'),F2=relevel(City,ref = 'CityA'),F3=relevel(Gender,ref = 'F'))
+m2=glm(cbind(Yes,No)~F1+F2+F3,data=dat1,family=binomial)
+```
+#### Logistic regression
+In this section, we will run a logistic regression to test whehter age, city, and gender will lead to higher chance of purchase amount over 10000. In the logistic regression model, the indepedent variables are still gender, age, and city. The dependent varialbe is a dummy variable with value "Yes" when purchase amount is greater than 10000 and value "No" when it is less than 10000. Below is the summary on the value "Yes" and "No" across different cities, gender, and age groups. We also plot the table of "Yes" and "No" across different cities, geneder, and age groups.
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+dat
+xtabs(cbind(Yes,No)~Gender+Age+City,data=dat)
+```
+
+Below is the logistic regression of the results. We first analyze the gender. Becasue the base level is female, the coefficient `r summary(m2)$coefficients[,"Estimate"][10]` indicates that compared to female, male is `r exp(summary(m2)$coefficients[,"Estimate"][10])-1` more likely than female to have purchase amount greater than 10000. Regarding the city group, the base level is city A. The coefficient of city B is  `r summary(m2)$coefficients[,"Estimate"][8]`, and it indicates that compared to people from city A, people from city B is `r exp(summary(m2)$coefficients[,"Estimate"][8])-1` more likely than people from city A to have purchase amount over 10000. The coefficient of city C is `r summary(m2)$coefficients[,"Estimate"][9]`, and it shows that compared to people from city A, people from city C is `r exp(summary(m2)$coefficients[,"Estimate"][9])-1` more likely than people from city A to have purchase amount over 10000. These logistic regression results are similar with the linear regression results. The base level of the age variable is age group below 18. All the coefficients of age group are positive, except for age group 55+. The coefficient of age group 55+ is `r summary(m2)$coefficients[,"Estimate"][7]`, the negative value shows that compared to age group below 18, age group over 55 are  `r 1-exp(summary(m2)$coefficients[,"Estimate"][7])` less likely to have purchase amount over 10000. It is interesting to notice that there is a difference on age group 55+ from the two regression results. The linear regression shows that compared to age group below 18, age 55+ will lead to increase of purchase amount.However, the logistic regression shows that compared to age group above 55, age group below 18 is more likely to have purchase amount over 10000! This insightful result shows that the retail store can increase purchase amout if they target more on age group below 18. Among all the group ages, age group 36-45 has the highest coefficient `r summary(m2)$coefficients[,"Estimate"][4]`, and it shows that age group 36-45 is `r exp(summary(m2)$coefficients[,"Estimate"][4])-1` more likely than age group below 18 to have purchase amount over 10000. This logistic regression result is consistent with the linear regression result.
+
+```{r warning = FALSE,message=FALSE,error=FALSE,echo=FALSE} 
+summary(m2)
+```
+
+#### Conclusion
+This report analyzes the purchaseing behavior on consumers from a retail store. Overall, consumers from city C have the highest purchase amount among consumers from all the cities. The retail store can think about specific ways to adverties on consumers from city A and city B. Consumers from city A contribute less to purchase amount and have least chance to have purchase amount over 10000. There migh be some factors lead to this result. If the retail store can find out the reasons behind, it can lead to the increase of the sales on black friday. In addition, this study also finds that male lead to the increase of purchase amount and have higher chance than female to have purhcase amount over 10000. This finding is surprising. The retail store can focus on male consumers to boost sale on black friday. The results also show that age group 36-45 is the group that has the highest purchase amount to total purchase amount and has the highest probability to have purchase amount over 1000 compared to age group below 18. The retail store can also focus advertising on these groups to maintain the high sales. 
